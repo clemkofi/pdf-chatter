@@ -1,8 +1,6 @@
 import { cn } from "@/lib/utils";
-import React, { ReactNode } from "react";
+import { ReactNode } from "react";
 
-// this is going to be a component that we would wrap around all other components in
-// order to keep the width consistent on all other pages
 const MaxWidthWrapper = ({
   className,
   children,
