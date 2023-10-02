@@ -13,7 +13,6 @@ const RoundedImage = ({
   imgWidth: number;
   imgHeight: number;
 }) => {
-  console.log({ imgHeight });
   return (
     <div className="mx-auto max-w-6xl px-6 lg:px-8">
       <div className="mt-16 flow-root sm:mt-24">
