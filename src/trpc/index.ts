@@ -1,7 +1,8 @@
 import { getKindeServerSession } from "@kinde-oss/kinde-auth-nextjs/server";
-import { publicProcedure, router } from "./trpc";
+import { privateProcedure, publicProcedure, router } from "./trpc";
 import { TRPCError } from "@trpc/server";
 import { db } from "@/db";
+import { z } from "zod";
 
 export const appRouter = router({
   // authcallback route to check if the user exists in the database
@@ -30,6 +31,45 @@ export const appRouter = router({
 
     return { success: true };
   }),
+
+  // route to get all files form the db for a user
+  getUserFiles: privateProcedure.query(async ({ ctx }) => {
+    const { userId } = ctx;
+
+    return await db.file.findMany({
+      where: {
+        userId,
+      },
+    });
+  }),
+
+  // route to delete the file for a given user
+  deleteFile: privateProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await new Promise((f) => setTimeout(f, 4000));
+
+      const { userId } = ctx;
+
+      const file = await db.file.findFirst({
+        where: {
+          id: input.id,
+          userId,
+        },
+      });
+
+      if (!file) throw new TRPCError({ code: "NOT_FOUND" });
+
+      // delete file if it exists
+      await db.file.delete({
+        where: {
+          id: input.id,
+          userId,
+        },
+      });
+
+      return file;
+    }),
 });
 
 export type AppRouter = typeof appRouter;
