@@ -8,43 +8,61 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { format } from "date-fns";
 import { useState } from "react";
+import { inferRouterOutputs } from "@trpc/server";
+import { AppRouter } from "@/trpc";
 
-enum fileStatus {
+enum FileStatus {
   DELETING = "DELETING",
   DELETED = "DELETED",
   ACTIVE = "ACTIVE",
 }
 
+// type ShowFile = File & {
+//   status: FileStatus;
+// };
+
+type RouterOutput = inferRouterOutputs<AppRouter>;
+
+type FilesType = RouterOutput["getUserFiles"];
+
 const Dashboard = () => {
   const [currentlyDeletingFiles, setCurrentlyDeletingFiles] = useState<{
-    [filename: string]: fileStatus;
+    [filename: string]: FileStatus;
   }>({});
+
+  const [currentFiles, setCurrentFiles] = useState<FilesType>();
 
   // get the current trpc context
   const trpxCtx = trpc.useContext();
 
   // get all files for the current user
-  const { data: files, isLoading } = trpc.getUserFiles.useQuery();
+  const { data: files, isLoading } = trpc.getUserFiles.useQuery(undefined, {
+    onSuccess: (data) => {
+      setCurrentFiles([...data]);
+    },
+  });
 
   // mutation to delete file for user
   const { mutate: deleteFile } = trpc.deleteFile.useMutation({
-    onSuccess: () => {
-      trpxCtx.getUserFiles.invalidate();
+    onSuccess: (data) => {
+      // trpxCtx.getUserFiles.invalidate();
+      const { id } = data!;
+      setCurrentlyDeletingFiles((prev) => ({
+        ...prev,
+        [id]: FileStatus.DELETED,
+      }));
+
+      let files = currentFiles?.filter((file) => file.id !== id);
+
+      setCurrentFiles([...files!]);
     },
     onMutate: ({ id }) => {
-      setCurrentlyDeletingFiles({
-        ...currentlyDeletingFiles,
-        [id]: fileStatus.DELETING,
-      });
+      setCurrentlyDeletingFiles((prev) => ({
+        ...prev,
+        [id]: FileStatus.DELETING,
+      }));
     },
-    onSettled: (data) => {
-      const { id } = data!;
-      setCurrentlyDeletingFiles({
-        ...currentlyDeletingFiles,
-        [id]: fileStatus.DELETED,
-      });
-      console.log({ currentlyDeletingFiles });
-    },
+    onSettled: (data) => {},
   });
 
   return (
@@ -56,9 +74,9 @@ const Dashboard = () => {
       </div>
 
       {/* display all file uploaded by the user here */}
-      {files && files?.length !== 0 ? (
+      {currentFiles && currentFiles?.length !== 0 ? (
         <ul className="mt-8 grid grid-cols-1 gap-6 divide-y divide-zinc-200 md:grid-cols-2 lg:grid-cols-3">
-          {files
+          {currentFiles
             .sort(
               (a, b) =>
                 new Date(b.createdAt).getTime() -
@@ -102,7 +120,7 @@ const Dashboard = () => {
                     className="w-full"
                     variant="destructive"
                   >
-                    {currentlyDeletingFiles[file.id] === fileStatus.DELETING ? (
+                    {currentlyDeletingFiles[file.id] === FileStatus.DELETING ? (
                       <Loader2 className="h-4 w-4 animate-spin" />
                     ) : (
                       <Trash className="h-4 w-4" />
