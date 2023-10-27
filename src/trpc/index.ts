@@ -43,6 +43,24 @@ export const appRouter = router({
     });
   }),
 
+  // route to get the details of one file form the db for a user
+  getOneUserFile: privateProcedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { userId } = ctx;
+
+      const file = await db.file.findFirst({
+        where: {
+          id: input.id,
+          userId,
+        },
+      });
+
+      if (!file) throw new TRPCError({ code: "NOT_FOUND" });
+
+      return file;
+    }),
+
   // route to delete the file for a given user
   deleteFile: privateProcedure
     .input(z.object({ id: z.string() }))

@@ -33,7 +33,7 @@ const Dashboard = () => {
   const [currentFiles, setCurrentFiles] = useState<FilesType>();
 
   // get the current trpc context
-  const trpxCtx = trpc.useContext();
+  // const trpxCtx = trpc.useContext();
 
   // get all files for the current user
   const { data: files, isLoading } = trpc.getUserFiles.useQuery(undefined, {
