@@ -43,15 +43,15 @@ export const appRouter = router({
     });
   }),
 
-  // route to get the details of one file form the db for a user
-  getOneUserFile: privateProcedure
-    .input(z.object({ id: z.string() }))
-    .query(async ({ ctx, input }) => {
+  // route to get the details of one file form the db for a user which was uploaded
+  getFile: privateProcedure
+    .input(z.object({ key: z.string() }))
+    .mutation(async ({ ctx, input }) => {
       const { userId } = ctx;
 
       const file = await db.file.findFirst({
         where: {
-          id: input.id,
+          key: input.key,
           userId,
         },
       });
