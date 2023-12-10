@@ -18,18 +18,27 @@ const page = () => {
 
   const { data, isLoading } = trpc.authCallback.useQuery(undefined, {
     onSuccess: ({ success }) => {
+      console.log("here");
       if (success) {
         // this means the user is synced to db
         router.push(origin ? `/${origin}` : "/dashboard");
       }
     },
     onError: (err) => {
-      if (err.data?.code === "UNAUTHORIZED") {
-        router.push("/api/auth/login?");
+      console.log("here1");
+      if (
+        err.data?.code === "UNAUTHORIZED" ||
+        err.data?.code === "INTERNAL_SERVER_ERROR"
+      ) {
+        console.log("here2");
+        router.push("/sign-in");
       }
     },
-    retry: true,
-    retryDelay: 500,
+    retry: (data) => {
+      console.log(data);
+      return true;
+    },
+    retryDelay: 20000,
   });
 
   return (

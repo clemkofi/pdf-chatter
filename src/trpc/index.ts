@@ -10,6 +10,9 @@ export const appRouter = router({
     const { getUser } = getKindeServerSession();
     const user = getUser();
 
+    console.log("the call");
+    if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
+
     if (!user.id || !user.email) throw new TRPCError({ code: "UNAUTHORIZED" });
 
     // check for whether the current user is synced in our db
@@ -59,6 +62,24 @@ export const appRouter = router({
       if (!file) throw new TRPCError({ code: "NOT_FOUND" });
 
       return file;
+    }),
+
+  // route to get the upload status for a file
+  getFileUploadStatus: privateProcedure
+    .input(z.object({ fileId: z.string() }))
+    .query(async ({ input, ctx }) => {
+      const { userId } = ctx;
+
+      const file = await db.file.findFirst({
+        where: {
+          id: input.fileId,
+          userId,
+        },
+      });
+
+      if (!file) return { status: "PENDING" as const };
+
+      return { status: file.uploadStatus };
     }),
 
   // route to delete the file for a given user
